@@ -22,7 +22,7 @@ def extract_option_data(message_content):
         option_type_text = match.group(3)     # e.g., "Puts" or "Calls"
         expiration_text = match.group(4)      # e.g., "3/3"
         price = match.group(5)              # e.g., "0.68"
-        action = "buy_to_open"              # Hardcoded for now
+        side = "buy_to_open"              # Hardcoded for now
 
         # Convert expiration "month/day" to OCC format "yymmdd"
         # Assumed year: 2025 -> "25"
@@ -62,7 +62,7 @@ def extract_option_data(message_content):
             "option_type": option_type_text,
             "expiration": expiration_text,
             "price": price,
-            "action": action,
+            "side": side,
             "option_symbol": option_symbol
         }
     else:
@@ -89,7 +89,7 @@ async def on_message(message):
                 print(f"  Option Type: {option_data['option_type']}")
                 print(f"  Expiration: {option_data['expiration']}")
                 print(f"  Price: {option_data['price']}")
-                print(f"  Action: {option_data['action']}")
+                print(f"  Side: {option_data['side']}")
                 print(f"  OCC Option Symbol: {option_data['option_symbol']}")
             else:
                 print("Message did not match the expected option order format.")
