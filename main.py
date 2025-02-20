@@ -11,6 +11,8 @@ TARGET_CHANNEL_ID = 990575817115463773
 bot = commands.Bot(command_prefix="!", self_bot=True)
 
 def extract_option_data(message_content):
+    if "%" in message_content:
+        return None
   
     # Regex to extract: Ticker, Strike, Option Type, Expiration (month/day), and Price
     pattern = r'\$([A-Z]+)\s+(\d+)\s+(Puts|Calls)\s+(\d{1,2}/\d{1,2})\s+\$(\d+\.\d{2})'
