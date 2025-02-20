@@ -17,15 +17,14 @@ def extract_option_data(message_content):
     match = re.search(pattern, message_content)
     
     if match:
-        ticker = match.group(1)             # e.g., SPY
+        option_class = "option"             #hardcoded
+        symbol = match.group(1)             # e.g., SPY
         strike_str = match.group(2)         # e.g., "593"
         option_type_text = match.group(3)     # e.g., "Puts" or "Calls"
         expiration_text = match.group(4)      # e.g., "3/3"
         price = match.group(5)              # e.g., "0.68"
-        side = "buy_to_open"              # Hardcoded for now
+        side = "buy_to_open"              # hardcoded for now
 
-        # Convert expiration "month/day" to OCC format "yymmdd"
-        # Assumed year: 2025 -> "25"
         try:
             day, month = expiration_text.split("/")
             month = month.zfill(2)  # ensure two digits
@@ -35,7 +34,6 @@ def extract_option_data(message_content):
             print(f"Error processing expiration date: {e}")
             expiration_occ = ""
 
-        # Convert option type to OCC letter: "P" for Puts, "C" for Calls
         if option_type_text.lower().startswith("put"):
             option_type_letter = "P"
         elif option_type_text.lower().startswith("call"):
@@ -43,8 +41,6 @@ def extract_option_data(message_content):
         else:
             option_type_letter = ""
         
-        # Process strike price:
-        # Multiply by 1000 and pad with zeros to create an 8-digit number.
         try:
             strike_value = float(strike_str)
             strike_occ_int = int(round(strike_value * 1000))
@@ -53,11 +49,12 @@ def extract_option_data(message_content):
             print(f"Error processing strike price: {e}")
             strike_occ = ""
         
-        # Construct the OCC option symbol
-        option_symbol = f"{ticker}{expiration_occ}{option_type_letter}{strike_occ}"
-        
+
+        option_symbol = f"{symbol}{expiration_occ}{option_type_letter}{strike_occ}"
+    
         return {
-            "ticker": ticker,
+            "option_class": option_class,
+            "symbol": symbol,
             "strike": strike_str,
             "option_type": option_type_text,
             "expiration": expiration_text,
@@ -77,20 +74,34 @@ async def on_message(message):
     
     if message.guild and message.channel:
         if message.guild.id == TARGET_SERVER_ID and message.channel.id == TARGET_CHANNEL_ID:
-            #print(f"New message in {message.channel.name}:")
-            #print(f"Author: {message.author.name}")
-            #print(f"Content: {message.content}\n")
-
             option_data = extract_option_data(message.content)
             if option_data:
-                print("Extracted Option Data:")
-                print(f"  Ticker: {option_data['ticker']}")
-                print(f"  Strike: {option_data['strike']}")
-                print(f"  Option Type: {option_data['option_type']}")
-                print(f"  Expiration: {option_data['expiration']}")
-                print(f"  Price: {option_data['price']}")
-                print(f"  Side: {option_data['side']}")
-                print(f"  OCC Option Symbol: {option_data['option_symbol']}")
+
+                try:
+                    entry_price = float(option_data['price'])
+                    stop_price = entry_price * 0.7
+                    stop_price_str = f"{stop_price:.2f}"
+                except Exception as e:
+                    print(f"Error calculating stop price: {e}")
+                    stop_price_str = "0.00"
+                
+                request_payload = {
+                    'class': option_data['option_class'],
+                    'symbol': option_data['symbol'],
+                    'option_symbol': option_data['option_symbol'],
+                    'side': option_data['side'],
+                    'quantity': '10',          # Hardcoded quantity
+                    'type': 'market',          # Hardcoded order type
+                    'duration': 'day',         # Hardcoded duration
+                    'price': option_data['price'],
+                    'stop': stop_price_str,
+                    'tag': 'Order 1'
+                }
+
+                print("Data for Tradier API Request:")
+                for key, value in request_payload.items():
+                    print(f"{key}: {value}")
+                
             else:
                 print("Message did not match the expected option order format.")
 try:
