@@ -1,12 +1,15 @@
+
+import asyncio
 import discord
 from discord.ext import commands
-import asyncio
 import re
 
 #keep this stuff in a .env file do not hardcode lol
 USER_TOKEN = "NjcyODM3MjIwOTUxOTE2NTQ1.Gny3oR.KMtODQXfiDWm7IY0WXa2BUrqdGKQh9yeNzC_oY"
 TARGET_SERVER_ID = 990575817115463770  
 TARGET_CHANNEL_ID = 990575817115463773
+
+
 
 bot = commands.Bot(command_prefix="!", self_bot=True)
 
@@ -51,7 +54,6 @@ def extract_option_data(message_content):
             print(f"Error processing strike price: {e}")
             strike_occ = ""
         
-
         option_symbol = f"{symbol}{expiration_occ}{option_type_letter}{strike_occ}"
     
         return {
