@@ -1,4 +1,4 @@
-
+#imports
 import asyncio
 import discord
 from discord.ext import commands
@@ -13,9 +13,10 @@ TRADIER_TOKEN = "cEZBR2y14lCRz4FvT6gsHZqWPY6c"
 TRADIER_ACCOUNT_ID = "VA81758002"
 
 
-
+#establishes selfbot
 bot = commands.Bot(command_prefix="!", self_bot=True)
 
+#extracts data from messages
 def extract_option_data(message_content):
     if "%" in message_content:
         return None
@@ -71,7 +72,9 @@ def extract_option_data(message_content):
         }
     else:
         return None
+    
 
+#Sends orders to tradier
 async def send_tradier_order(payload):
     url = f"https://sandbox.tradier.com/v1/accounts/{TRADIER_ACCOUNT_ID}/orders"
     headers = {
@@ -98,14 +101,13 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
-    
     if message.guild and message.channel:
         if message.guild.id == TARGET_SERVER_ID and message.channel.id == TARGET_CHANNEL_ID:
             option_data = extract_option_data(message.content)
             if option_data:
-                #print("Waiting 15 minutes due to delayed market data...")
-                #await asyncio.sleep(15 * 60)  # 15 minutes = 900 seconds
-
+                print("Waiting 15 minutes due to delayed market data...")
+                await asyncio.sleep(15 * 60)  # 15 minutes = 900 seconds
+                
                 try:
                     entry_price = float(option_data['price'])
                     stop_price = entry_price * 0.7
@@ -113,28 +115,43 @@ async def on_message(message):
                 except Exception as e:
                     print(f"Error calculating stop price: {e}")
                     stop_price_str = "0.00"
-                
-                request_payload = {
+
+                  # First Order: Market order to buy
+                buy_payload = {
                     'class': option_data['option_class'],
                     'symbol': option_data['symbol'],
                     'option_symbol': option_data['option_symbol'],
-                    'side': option_data['side'],
-                    'quantity': '5',          # Hardcoded quantity for now
-                    'type': 'market',          # Hardcoded order type
-                    'duration': 'day',         # Hardcoded duration
-                    'price': option_data['price'],
-                    'stop': stop_price_str,
-                    'tag': 'Test-Order'
+                    'side': 'buy_to_open',
+                    'quantity': '10',
+                    'type': 'market',
+                    'duration': 'day',
+                    'tag': 'Buy Order'
                 }
+                print("Sending Buy Order:", buy_payload)
+                buy_response = await send_tradier_order(buy_payload)
 
-                print("Data for Tradier API Request:")
-                for key, value in request_payload.items():
-                    print(f"{key}: {value}")
+                # If the buy order succeeds, place a stop-loss order to sell
+                if buy_response and buy_response.get('order', {}).get('status') == 'ok':
+                    stop_loss_payload = {
+                        'class': option_data['option_class'],
+                        'symbol': option_data['symbol'],
+                        'option_symbol': option_data['option_symbol'],
+                        'side': 'sell_to_close',  # Sell to close the position
+                        'quantity': '10',
+                        'type': 'stop',
+                        'duration': 'gtc',  # Good 'til canceled
+                        'stop': stop_price_str,
+                        'tag': 'Stop Loss Order'
+                    }
+                    print("Sending Stop-Loss Order:", stop_loss_payload)
+                    await send_tradier_order(stop_loss_payload)
+                else:
+                    print("Buy order failed, skipping stop-loss order.")
 
-                await send_tradier_order(request_payload)
-                
             else:
                 print("Message did not match the expected option order format.")
+
+    
 try:
     bot.run(USER_TOKEN)
 except Exception as e:
