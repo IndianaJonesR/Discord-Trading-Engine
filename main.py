@@ -3,11 +3,14 @@ import asyncio
 import discord
 from discord.ext import commands
 import re
+import requests
 
 #keep this stuff in a .env file do not hardcode lol
 USER_TOKEN = "NjcyODM3MjIwOTUxOTE2NTQ1.Gny3oR.KMtODQXfiDWm7IY0WXa2BUrqdGKQh9yeNzC_oY"
 TARGET_SERVER_ID = 990575817115463770  
 TARGET_CHANNEL_ID = 990575817115463773
+TRADIER_TOKEN = "cEZBR2y14lCRz4FvT6gsHZqWPY6c"
+TRADIER_ACCOUNT_ID = "VA81758002"
 
 
 
@@ -69,6 +72,26 @@ def extract_option_data(message_content):
     else:
         return None
 
+async def send_tradier_order(payload):
+    url = f"https://sandbox.tradier.com/v1/accounts/{TRADIER_ACCOUNT_ID}/orders"
+    headers = {
+        'Authorization': f"Bearer {TRADIER_TOKEN}",
+        'Accept': 'application/json'
+    }
+    try:
+        response = requests.post(url, data=payload, headers=headers)
+        print(f"Status Code: {response.status_code}")
+        print(f"Response Text: {response.text}")
+        if response.status_code == 200:
+            json_response = response.json()
+            print(f"JSON Response: {json_response}")
+        else:
+            print(f"API request failed with status {response.status_code}")
+    except Exception as e:
+        print(f"Error sending Tradier API request: {e}")
+
+
+
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user}")
@@ -80,6 +103,8 @@ async def on_message(message):
         if message.guild.id == TARGET_SERVER_ID and message.channel.id == TARGET_CHANNEL_ID:
             option_data = extract_option_data(message.content)
             if option_data:
+                #print("Waiting 15 minutes due to delayed market data...")
+                #await asyncio.sleep(15 * 60)  # 15 minutes = 900 seconds
 
                 try:
                     entry_price = float(option_data['price'])
@@ -94,17 +119,19 @@ async def on_message(message):
                     'symbol': option_data['symbol'],
                     'option_symbol': option_data['option_symbol'],
                     'side': option_data['side'],
-                    'quantity': '10',          # Hardcoded quantity
+                    'quantity': '5',          # Hardcoded quantity for now
                     'type': 'market',          # Hardcoded order type
                     'duration': 'day',         # Hardcoded duration
                     'price': option_data['price'],
                     'stop': stop_price_str,
-                    'tag': 'Order 1'
+                    'tag': 'Test-Order'
                 }
 
                 print("Data for Tradier API Request:")
                 for key, value in request_payload.items():
                     print(f"{key}: {value}")
+
+                await send_tradier_order(request_payload)
                 
             else:
                 print("Message did not match the expected option order format.")
