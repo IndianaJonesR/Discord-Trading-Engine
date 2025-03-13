@@ -86,12 +86,20 @@ async def send_tradier_order(payload):
         print(f"Status Code: {response.status_code}")
         print(f"Response Text: {response.text}")
         if response.status_code == 200:
-            json_response = response.json()
-            print(f"JSON Response: {json_response}")
+            try: 
+                
+                json_response = response.json()
+                print(f"JSON Response: {json_response}")
+                return response.status_code, json_response  # Return status and parsed response
+            except ValueError:
+                    print("Response is not valid JSON")
+                    return response.status_code, None  # Return status with no parsed response
         else:
             print(f"API request failed with status {response.status_code}")
+            return response.status_code, None
     except Exception as e:
         print(f"Error sending Tradier API request: {e}")
+        return None, None
 
 
 
@@ -107,7 +115,7 @@ async def on_message(message):
             if option_data:
                 print("Waiting 15 minutes due to delayed market data...")
                 await asyncio.sleep(15 * 60)  # 15 minutes = 900 seconds
-                
+
                 try:
                     entry_price = float(option_data['price'])
                     stop_price = entry_price * 0.7
@@ -125,13 +133,13 @@ async def on_message(message):
                     'quantity': '10',
                     'type': 'market',
                     'duration': 'day',
-                    'tag': 'Buy Order'
+                    'tag': 'Buy-Order'
                 }
                 print("Sending Buy Order:", buy_payload)
-                buy_response = await send_tradier_order(buy_payload)
+                buy_status, buy_response = await send_tradier_order(buy_payload)
 
                 # If the buy order succeeds, place a stop-loss order to sell
-                if buy_response and buy_response.get('order', {}).get('status') == 'ok':
+                if buy_status == 200:
                     stop_loss_payload = {
                         'class': option_data['option_class'],
                         'symbol': option_data['symbol'],
@@ -141,7 +149,7 @@ async def on_message(message):
                         'type': 'stop',
                         'duration': 'gtc',  # Good 'til canceled
                         'stop': stop_price_str,
-                        'tag': 'Stop Loss Order'
+                        'tag': 'Stop-Loss-Order'
                     }
                     print("Sending Stop-Loss Order:", stop_loss_payload)
                     await send_tradier_order(stop_loss_payload)
