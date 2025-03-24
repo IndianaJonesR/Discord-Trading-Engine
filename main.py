@@ -7,8 +7,8 @@ import requests
 
 #keep this stuff in a .env file do not hardcode lol
 USER_TOKEN = "NjcyODM3MjIwOTUxOTE2NTQ1.Gny3oR.KMtODQXfiDWm7IY0WXa2BUrqdGKQh9yeNzC_oY"
-TARGET_SERVER_ID = 990575817115463770 
-TARGET_CHANNEL_ID = 990575817115463773
+TARGET_SERVER_ID = 1053388723737337967
+TARGET_CHANNEL_ID = 1060658654350688447
 TRADIER_TOKEN = "cEZBR2y14lCRz4FvT6gsHZqWPY6c"
 TRADIER_ACCOUNT_ID = "VA81758002"
 
@@ -118,44 +118,63 @@ async def on_message(message):
 
                 try:
                     entry_price = float(option_data['price'])
-                    stop_price = entry_price * 0.7
-                    stop_price_str = f"{stop_price:.2f}"
+                    # Calculate stop loss at 20% below and take profit at 30% above entry price
+                    stop_loss = entry_price * 0.8
+                    take_profit = entry_price * 1.3
+                    stop_loss_str = f"{stop_loss:.2f}"
+                    take_profit_str = f"{take_profit:.2f}"
+
+                    #calculate position sizing based on $100 position sizes with max being $120
+                    if (entry_price * 1) > 120:
+                        pos_size = 1  # If the contract is too expensive, buy just one
+                    else:
+                        max_contracts = 120 // (entry_price * 1) # Maximum contracts to stay within $120
+                        min_contracts = 100 // (entry_price * 1) # Minimum contracts to stay above $100
+                    
+                        if min_contracts == 0: 
+                            pos_size = max_contracts  # If even 1 contract is above $100, take the max possible
+                        else:
+                            pos_size = max_contracts if max_contracts * (entry_price * 1) <= 120 else min_contracts
+                    pos_size = max(1, pos_size)
+
                 except Exception as e:
-                    print(f"Error calculating stop price: {e}")
-                    stop_price_str = "0.00"
+                    print(f"Error calculating prices: {e}")
+                    stop_loss_str = "0.00"
+                    take_profit_str = "0.00"
 
-                  # First Order: Market order to buy
-                buy_payload = {
-                    'class': option_data['option_class'],
-                    'symbol': option_data['symbol'],
-                    'option_symbol': option_data['option_symbol'],
-                    'side': 'buy_to_open',
-                    'quantity': '10',
-                    'type': 'market',
+                otoco_payload = {
+                    'class': 'otoco',
                     'duration': 'day',
-                    'tag': 'Buy-Order'
+                    # Primary buy order
+                    'type[0]': 'limit',
+                    'price[0]':option_data['price'],
+                    'option_symbol[0]': option_data['option_symbol'],
+                    'side[0]': 'buy_to_open',
+                    'quantity[0]': str(pos_size) ,
+                    # Take profit order
+                    'type[1]': 'limit',
+                    'price[1]': take_profit_str,
+                    'option_symbol[1]': option_data['option_symbol'],
+                    'side[1]': 'sell_to_close',
+                    'quantity[1]': str(pos_size - 30),
+                    # Stop loss order (using stop_limit order type)
+                    'type[2]': 'stop_limit',
+                    'price[2]': stop_loss_str,  # Limit price for stop order
+                    'stop[2]': stop_loss_str,   # Trigger at stop loss price
+                    'option_symbol[2]': option_data['option_symbol'],
+                    'side[2]': 'sell_to_close',
+                    'quantity[2]': pos_size
                 }
-                print("Sending Buy Order:", buy_payload)
-                buy_status, buy_response = await send_tradier_order(buy_payload)
 
-                # If the buy order succeeds, place a stop-loss order to sell
-                if buy_status == 200:
-                    stop_loss_payload = {
-                        'class': option_data['option_class'],
-                        'symbol': option_data['symbol'],
-                        'option_symbol': option_data['option_symbol'],
-                        'side': 'sell_to_close',  # Sell to close the position
-                        'quantity': '10',
-                        'type': 'stop',
-                        'duration': 'gtc',  # Good 'til canceled
-                        'stop': stop_price_str,
-                        'tag': 'Stop-Loss-Order'
-                    }
-                    print("Sending Stop-Loss Order:", stop_loss_payload)
-                    await send_tradier_order(stop_loss_payload)
+                print("Sending OTOCO Order:")
+                for key, value in otoco_payload.items():
+                    print(f"{key}: {value}")
+                
+                status, response_json = await send_tradier_order(otoco_payload)
+                if status == 200:
+                    print("OTOCO order placed successfully!")
                 else:
-                    print("Buy order failed, skipping stop-loss order.")
-
+                    print("OTOCO order failed.")
             else:
                 print("Message did not match the expected option order format.")
 
