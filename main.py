@@ -7,8 +7,8 @@ import requests
 
 #keep this stuff in a .env file do not hardcode lol
 USER_TOKEN = "NjcyODM3MjIwOTUxOTE2NTQ1.Gny3oR.KMtODQXfiDWm7IY0WXa2BUrqdGKQh9yeNzC_oY"
-TARGET_SERVER_ID = 1053388723737337967  
-TARGET_CHANNEL_ID = 1060658654350688447
+TARGET_SERVER_ID = 990575817115463770 
+TARGET_CHANNEL_ID = 990575817115463773
 TRADIER_TOKEN = "cEZBR2y14lCRz4FvT6gsHZqWPY6c"
 TRADIER_ACCOUNT_ID = "VA81758002"
 
@@ -113,8 +113,8 @@ async def on_message(message):
         if message.guild.id == TARGET_SERVER_ID and message.channel.id == TARGET_CHANNEL_ID:
             option_data = extract_option_data(message.content)
             if option_data:
-                print("Waiting 15 minutes due to delayed market data...")
-                await asyncio.sleep(15 * 60)  # 15 minutes = 900 seconds
+                #print("Waiting 15 minutes due to delayed market data...")
+                #await asyncio.sleep(15 * 60)  # 15 minutes = 900 seconds
 
                 try:
                     entry_price = float(option_data['price'])
