@@ -4,6 +4,8 @@ import discord
 from discord.ext import commands
 import re
 import requests
+import json
+import os
 
 #keep this stuff in a .env file do not hardcode lol
 USER_TOKEN = "NjcyODM3MjIwOTUxOTE2NTQ1.Gny3oR.KMtODQXfiDWm7IY0WXa2BUrqdGKQh9yeNzC_oY"
@@ -12,6 +14,46 @@ TARGET_CHANNEL_ID = 1060658654350688447
 TRADIER_TOKEN = "cEZBR2y14lCRz4FvT6gsHZqWPY6c"
 TRADIER_ACCOUNT_ID = "VA81758002"
 
+# Configuration file path
+CONFIG_FILE = "trading_config.json"
+
+# Default configuration
+DEFAULT_CONFIG = {
+    "position_size": {
+        "min_amount": 100,
+        "max_amount": 120
+    },
+    "stop_loss": {
+        "percentage": 20  # 20% below entry price
+    },
+    "take_profit": {
+        "percentage": 30  # 30% above entry price
+    },
+    "entry_price_adjustment": 1.05  # 5% above market price
+}
+
+# Load configuration from file or create with defaults
+def load_config():
+    if os.path.exists(CONFIG_FILE):
+        try:
+            with open(CONFIG_FILE, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Error loading config: {e}")
+            return DEFAULT_CONFIG
+    else:
+        save_config(DEFAULT_CONFIG)
+        return DEFAULT_CONFIG
+
+# Save configuration to file
+def save_config(config):
+    try:
+        with open(CONFIG_FILE, 'w') as f:
+            json.dump(config, f, indent=4)
+        return True
+    except Exception as e:
+        print(f"Error saving config: {e}")
+        return False
 
 #establishes selfbot
 bot = commands.Bot(command_prefix="!", self_bot=True)
@@ -106,6 +148,8 @@ async def send_tradier_order(payload):
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user}")
+    # Ensure config file exists
+    load_config()
 
 @bot.event
 async def on_message(message):
@@ -113,28 +157,41 @@ async def on_message(message):
         if message.guild.id == TARGET_SERVER_ID and message.channel.id == TARGET_CHANNEL_ID:
             option_data = extract_option_data(message.content)
             if option_data:
-                #print("Waiting 15 minutes due to delayed market data...")
-                #await asyncio.sleep(15 * 60)  # 15 minutes = 900 seconds
+                print("Waiting 15 minutes due to delayed market data...")
+                await asyncio.sleep(15 * 60)  # 15 minutes = 900 seconds
 
                 try:
-                    entry_price = float(option_data['price'])
-                    # Calculate stop loss at 20% below and take profit at 30% above entry price
-                    stop_loss = entry_price * 0.8
-                    take_profit = entry_price * 1.3
+                    # Load current configuration
+                    config = load_config()
+                    
+                    # Calculate entry price with user-defined adjustment
+                    entry_price = float(option_data['price']) * config['entry_price_adjustment']
+                    
+                    # Calculate stop loss and take profit based on user preferences
+                    stop_loss_percentage = config['stop_loss']['percentage'] / 100
+                    take_profit_percentage = config['take_profit']['percentage'] / 100
+                    
+                    stop_loss = entry_price * (1 - stop_loss_percentage)
+                    take_profit = entry_price * (1 + take_profit_percentage)
+                    
                     stop_loss_str = f"{stop_loss:.2f}"
                     take_profit_str = f"{take_profit:.2f}"
 
-                    #calculate position sizing based on $100 position sizes with max being $120
-                    if (entry_price * 1) > 120:
+                    # Calculate position sizing based on user-defined limits
+                    min_amount = config['position_size']['min_amount']
+                    max_amount = config['position_size']['max_amount']
+                    
+                    if (entry_price * 100) > max_amount:
                         pos_size = 1  # If the contract is too expensive, buy just one
                     else:
-                        max_contracts = 120 // (entry_price * 1) # Maximum contracts to stay within $120
-                        min_contracts = 100 // (entry_price * 1) # Minimum contracts to stay above $100
+                        max_contracts = max_amount // (entry_price * 100)  # Maximum contracts to stay within max_amount
+                        min_contracts = min_amount // (entry_price * 100)  # Minimum contracts to stay above min_amount
                     
                         if min_contracts == 0: 
-                            pos_size = max_contracts  # If even 1 contract is above $100, take the max possible
+                            pos_size = max_contracts  # If even 1 contract is above min_amount, take the max possible
                         else:
-                            pos_size = max_contracts if max_contracts * (entry_price * 1) <= 120 else min_contracts
+                            pos_size = max_contracts if max_contracts * (entry_price * 100) <= max_amount else min_contracts
+                    
                     pos_size = max(1, pos_size)
 
                 except Exception as e:
@@ -147,7 +204,7 @@ async def on_message(message):
                     'duration': 'day',
                     # Primary buy order
                     'type[0]': 'limit',
-                    'price[0]':option_data['price'],
+                    'price[0]': option_data['price'],
                     'option_symbol[0]': option_data['option_symbol'],
                     'side[0]': 'buy_to_open',
                     'quantity[0]': str(pos_size) ,
@@ -156,7 +213,7 @@ async def on_message(message):
                     'price[1]': take_profit_str,
                     'option_symbol[1]': option_data['option_symbol'],
                     'side[1]': 'sell_to_close',
-                    'quantity[1]': str(pos_size - 30),
+                    'quantity[1]': str(pos_size),
                     # Stop loss order (using stop_limit order type)
                     'type[2]': 'stop_limit',
                     'price[2]': stop_loss_str,  # Limit price for stop order
