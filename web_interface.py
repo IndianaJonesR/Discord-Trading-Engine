@@ -13,46 +13,35 @@ CONFIG_FILE = "trading_config.json"
 DEFAULT_CONFIG = {
     "position_size": {
         "min_amount": 100,
-        "max_amount": 120
+        "max_amount": 1000
     },
     "stop_loss": {
-        "percentage": 20  # 20% below entry price
+        "percentage": 5
     },
     "take_profit": {
-        "percentage": 30  # 30% above entry price
+        "percentage": 10
     },
-    "entry_price_adjustment": 1.05  # 5% above market price
+    "entry_price_adjustment": 1.02  # 2% above market price
 }
 
 # Load configuration from file or create with defaults
 def load_config():
     if os.path.exists(CONFIG_FILE):
-        try:
-            with open(CONFIG_FILE, 'r') as f:
-                return json.load(f)
-        except Exception as e:
-            print(f"Error loading config: {e}")
-            return DEFAULT_CONFIG
-    else:
-        save_config(DEFAULT_CONFIG)
-        return DEFAULT_CONFIG
+        with open(CONFIG_FILE, 'r') as f:
+            return json.load(f)
+    return DEFAULT_CONFIG
 
 # Save configuration to file
 def save_config(config):
-    try:
-        with open(CONFIG_FILE, 'w') as f:
-            json.dump(config, f, indent=4)
-        return True
-    except Exception as e:
-        print(f"Error saving config: {e}")
-        return False
+    with open(CONFIG_FILE, 'w') as f:
+        json.dump(config, f, indent=4)
 
 # Create templates directory if it doesn't exist
 os.makedirs('templates', exist_ok=True)
 os.makedirs('static', exist_ok=True)
 
 # Create the HTML template
-with open('templates/index.html', 'w') as f:
+with open('templates/dark_theme.html', 'w') as f:
     f.write('''
 <!DOCTYPE html>
 <html lang="en">
@@ -328,7 +317,7 @@ with open('templates/index.html', 'w') as f:
 # API Routes
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('dark_theme.html')
 
 @app.route('/api/config', methods=['GET'])
 def get_config():
@@ -336,80 +325,49 @@ def get_config():
 
 @app.route('/api/position', methods=['POST'])
 def update_position():
-    data = request.json
-    min_amount = data.get('min_amount')
-    max_amount = data.get('max_amount')
-    
-    if not min_amount or not max_amount or min_amount >= max_amount:
-        return jsonify({'error': 'Invalid position size values'}), 400
-    
+    data = request.get_json()
     config = load_config()
-    config['position_size']['min_amount'] = min_amount
-    config['position_size']['max_amount'] = max_amount
-    
-    if save_config(config):
-        return jsonify({'success': True})
-    else:
-        return jsonify({'error': 'Failed to save configuration'}), 500
+    config['position_size'] = {
+        'min_amount': float(data['min_amount']),
+        'max_amount': float(data['max_amount'])
+    }
+    save_config(config)
+    return jsonify({'status': 'success'})
 
 @app.route('/api/stop-loss', methods=['POST'])
 def update_stop_loss():
-    data = request.json
-    percentage = data.get('percentage')
-    
-    if not percentage or percentage <= 0 or percentage >= 100:
-        return jsonify({'error': 'Invalid stop loss percentage'}), 400
-    
+    data = request.get_json()
     config = load_config()
-    config['stop_loss']['percentage'] = percentage
-    
-    if save_config(config):
-        return jsonify({'success': True})
-    else:
-        return jsonify({'error': 'Failed to save configuration'}), 500
+    config['stop_loss']['percentage'] = float(data['percentage'])
+    save_config(config)
+    return jsonify({'status': 'success'})
 
 @app.route('/api/take-profit', methods=['POST'])
 def update_take_profit():
-    data = request.json
-    percentage = data.get('percentage')
-    
-    if not percentage or percentage <= 0:
-        return jsonify({'error': 'Invalid take profit percentage'}), 400
-    
+    data = request.get_json()
     config = load_config()
-    config['take_profit']['percentage'] = percentage
-    
-    if save_config(config):
-        return jsonify({'success': True})
-    else:
-        return jsonify({'error': 'Failed to save configuration'}), 500
+    config['take_profit']['percentage'] = float(data['percentage'])
+    save_config(config)
+    return jsonify({'status': 'success'})
 
 @app.route('/api/entry-adjustment', methods=['POST'])
 def update_entry_adjustment():
-    data = request.json
-    percentage = data.get('percentage')
-    
-    if not percentage or percentage <= 0:
-        return jsonify({'error': 'Invalid entry adjustment percentage'}), 400
-    
+    data = request.get_json()
     config = load_config()
-    config['entry_price_adjustment'] = 1 + (percentage / 100)
-    
-    if save_config(config):
-        return jsonify({'success': True})
-    else:
-        return jsonify({'error': 'Failed to save configuration'}), 500
+    # Convert percentage to multiplier (e.g., 2% -> 1.02)
+    config['entry_price_adjustment'] = 1 + (float(data['percentage']) / 100)
+    save_config(config)
+    return jsonify({'status': 'success'})
 
 @app.route('/api/reset', methods=['POST'])
 def reset_config():
-    if save_config(DEFAULT_CONFIG):
-        return jsonify({'success': True})
-    else:
-        return jsonify({'error': 'Failed to reset configuration'}), 500
+    save_config(DEFAULT_CONFIG)
+    return jsonify({'status': 'success'})
 
 if __name__ == '__main__':
     # Ensure config file exists
-    load_config()
+    if not os.path.exists(CONFIG_FILE):
+        save_config(DEFAULT_CONFIG)
     
     # Run the Flask app
     app.run(host='0.0.0.0', port=5000, debug=True) 
