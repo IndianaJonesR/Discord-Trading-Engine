@@ -9,8 +9,12 @@ import os
 
 #keep this stuff in a .env file do not hardcode lol
 USER_TOKEN = "NjcyODM3MjIwOTUxOTE2NTQ1.Gny3oR.KMtODQXfiDWm7IY0WXa2BUrqdGKQh9yeNzC_oY"
-TARGET_SERVER_ID = 1053388723737337967
-TARGET_CHANNEL_ID = 1060658654350688447
+Morphine_Server_ID = 1053388723737337967
+Morphine_Channel_ID = 1060658654350688447
+Personal_Server_ID = 990575817115463770
+Personal_Channel_ID = 990575817115463773
+TARGET_SERVER_ID = Personal_Server_ID
+TARGET_CHANNEL_ID = Personal_Channel_ID
 TRADIER_TOKEN = "cEZBR2y14lCRz4FvT6gsHZqWPY6c"
 TRADIER_ACCOUNT_ID = "VA81758002"
 
@@ -157,8 +161,8 @@ async def on_message(message):
         if message.guild.id == TARGET_SERVER_ID and message.channel.id == TARGET_CHANNEL_ID:
             option_data = extract_option_data(message.content)
             if option_data:
-                print("Waiting 15 minutes due to delayed market data...")
-                await asyncio.sleep(15 * 60)  # 15 minutes = 900 seconds
+                #print("Waiting 15 minutes due to delayed market data...")
+                #await asyncio.sleep(15 * 60)  # 15 minutes = 900 seconds
 
                 try:
                     # Load current configuration
@@ -182,7 +186,7 @@ async def on_message(message):
                     max_amount = config['position_size']['max_amount']
                     
                     if (entry_price * 100) > max_amount:
-                        pos_size = 1  # If the contract is too expensive, buy just one
+                        pos_size = 0  # Skip buying if the contract is too expensive
                     else:
                         max_contracts = max_amount // (entry_price * 100)  # Maximum contracts to stay within max_amount
                         min_contracts = min_amount // (entry_price * 100)  # Minimum contracts to stay above min_amount
@@ -192,12 +196,17 @@ async def on_message(message):
                         else:
                             pos_size = max_contracts if max_contracts * (entry_price * 100) <= max_amount else min_contracts
                     
-                    pos_size = max(1, pos_size)
+                    pos_size = max(0, pos_size)  # Ensure pos_size is at least 0
 
                 except Exception as e:
                     print(f"Error calculating prices: {e}")
                     stop_loss_str = "0.00"
                     take_profit_str = "0.00"
+
+                # Skip sending order if position size is 0
+                if pos_size == 0:
+                    print(f"Skipping order - contract price exceeds maximum amount")
+                    return
 
                 otoco_payload = {
                     'class': 'otoco',

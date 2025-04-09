@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,104 +5,321 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trading Bot Configuration</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
     <style>
-        body {
-            background-color: #f8f9fa;
-            padding-top: 2rem;
+        :root {
+            --primary-color: #6c5ce7;
+            --primary-hover: #5b4bc4;
+            --bg-dark: #121212;
+            --card-bg: #1e1e1e;
+            --text-primary: #ffffff;
+            --text-secondary: #b3b3b3;
+            --border-color: #333333;
+            --success-color: #00b894;
+            --danger-color: #d63031;
         }
-        .card {
-            border-radius: 15px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding-top: 2rem;
+            min-height: 100vh;
+        }
+        
+        .navbar {
+            background-color: var(--card-bg);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
             margin-bottom: 2rem;
         }
-        .card-header {
-            background-color: #4a6bdf;
-            color: white;
-            border-radius: 15px 15px 0 0 !important;
+        
+        .navbar-brand {
+            color: var(--primary-color);
             font-weight: bold;
+            font-size: 1.5rem;
         }
-        .btn-primary {
-            background-color: #4a6bdf;
-            border-color: #4a6bdf;
+        
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            margin-bottom: 1.5rem;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
-        .btn-primary:hover {
-            background-color: #3a5bc9;
-            border-color: #3a5bc9;
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
         }
+        
+        .card-header {
+            background-color: rgba(108, 92, 231, 0.1);
+            color: var(--primary-color);
+            border-bottom: 1px solid var(--border-color);
+            border-radius: 12px 12px 0 0 !important;
+            font-weight: 600;
+            padding: 1rem 1.25rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .card-header i {
+            margin-right: 0.5rem;
+            font-size: 1.2rem;
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        .form-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-control {
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            transition: all 0.2s;
+        }
+        
         .form-control:focus {
-            border-color: #4a6bdf;
-            box-shadow: 0 0 0 0.25rem rgba(74, 107, 223, 0.25);
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(108, 92, 231, 0.25);
+            color: var(--text-primary);
         }
+        
+        .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .btn {
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            border-color: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+        
+        .btn-danger {
+            background-color: var(--danger-color);
+            border-color: var(--danger-color);
+        }
+        
+        .btn-danger:hover {
+            background-color: #c02a2a;
+            border-color: #c02a2a;
+            transform: translateY(-2px);
+        }
+        
         .alert {
-            border-radius: 10px;
+            border-radius: 8px;
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .alert-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+        
+        .alert-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        
+        .alert-dismissible .btn-close {
+            color: white;
+        }
+        
+        .section-title {
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+        
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background-color: var(--primary-color);
+        }
+        
+        .config-summary {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+        }
+        
+        .config-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .config-item:last-child {
+            border-bottom: none;
+        }
+        
+        .config-label {
+            color: var(--text-secondary);
+        }
+        
+        .config-value {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem;
+            }
         }
     </style>
 </head>
 <body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <span class="navbar-brand">
+                <i class="bi bi-graph-up"></i> Trading Bot Config
+            </span>
+        </div>
+    </nav>
+
     <div class="container">
-        <h1 class="text-center mb-4">Trading Bot Configuration</h1>
-        
         <div class="row">
-            <div class="col-md-6 offset-md-3">
-                <div class="card">
-                    <div class="card-header">
-                        Position Size Settings
+            <div class="col-lg-8 offset-lg-2">
+                <div class="config-summary">
+                    <h5 class="section-title">Current Configuration</h5>
+                    <div class="config-item">
+                        <span class="config-label">Position Size</span>
+                        <span class="config-value" id="summaryPositionSize">Loading...</span>
                     </div>
-                    <div class="card-body">
-                        <form id="positionForm">
-                            <div class="mb-3">
-                                <label for="minAmount" class="form-label">Minimum Position Size ($)</label>
-                                <input type="number" class="form-control" id="minAmount" min="1" step="1" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="maxAmount" class="form-label">Maximum Position Size ($)</label>
-                                <input type="number" class="form-control" id="maxAmount" min="1" step="1" required>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Update Position Size</button>
-                        </form>
+                    <div class="config-item">
+                        <span class="config-label">Stop Loss</span>
+                        <span class="config-value" id="summaryStopLoss">Loading...</span>
                     </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        Stop Loss & Take Profit
+                    <div class="config-item">
+                        <span class="config-label">Take Profit</span>
+                        <span class="config-value" id="summaryTakeProfit">Loading...</span>
                     </div>
-                    <div class="card-body">
-                        <form id="profitLossForm">
-                            <div class="mb-3">
-                                <label for="stopLoss" class="form-label">Stop Loss Percentage</label>
-                                <input type="number" class="form-control" id="stopLoss" min="1" max="99" step="0.1" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="takeProfit" class="form-label">Take Profit Percentage</label>
-                                <input type="number" class="form-control" id="takeProfit" min="0.1" step="0.1" required>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Update Stop Loss & Take Profit</button>
-                        </form>
+                    <div class="config-item">
+                        <span class="config-label">Entry Adjustment</span>
+                        <span class="config-value" id="summaryEntryAdjustment">Loading...</span>
                     </div>
                 </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        Entry Price Adjustment
-                    </div>
-                    <div class="card-body">
-                        <form id="entryAdjustmentForm">
-                            <div class="mb-3">
-                                <label for="entryAdjustment" class="form-label">Entry Price Adjustment (%)</label>
-                                <input type="number" class="form-control" id="entryAdjustment" min="0.1" step="0.1" required>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="bi bi-currency-dollar"></i> Position Size
                             </div>
-                            <button type="submit" class="btn btn-primary">Update Entry Adjustment</button>
-                        </form>
+                            <div class="card-body">
+                                <form id="positionForm">
+                                    <div class="mb-3">
+                                        <label for="minAmount" class="form-label">Minimum Position Size ($)</label>
+                                        <input type="number" class="form-control" id="minAmount" min="1" step="1" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="maxAmount" class="form-label">Maximum Position Size ($)</label>
+                                        <input type="number" class="form-control" id="maxAmount" min="1" step="1" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="bi bi-check-circle me-2"></i>Update Position Size
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="bi bi-graph-down"></i> Stop Loss & Take Profit
+                            </div>
+                            <div class="card-body">
+                                <form id="profitLossForm">
+                                    <div class="mb-3">
+                                        <label for="stopLoss" class="form-label">Stop Loss Percentage</label>
+                                        <input type="number" class="form-control" id="stopLoss" min="1" max="99" step="0.1" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="takeProfit" class="form-label">Take Profit Percentage</label>
+                                        <input type="number" class="form-control" id="takeProfit" min="0.1" step="0.1" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="bi bi-check-circle me-2"></i>Update Stop Loss & Take Profit
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
                     </div>
                 </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        Reset Configuration
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="bi bi-arrow-up-circle"></i> Entry Price Adjustment
+                            </div>
+                            <div class="card-body">
+                                <form id="entryAdjustmentForm">
+                                    <div class="mb-3">
+                                        <label for="entryAdjustment" class="form-label">Entry Price Adjustment (%)</label>
+                                        <input type="number" class="form-control" id="entryAdjustment" min="0.1" step="0.1" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="bi bi-check-circle me-2"></i>Update Entry Adjustment
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <button id="resetButton" class="btn btn-danger">Reset to Defaults</button>
+                    
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="bi bi-arrow-counterclockwise"></i> Reset Configuration
+                            </div>
+                            <div class="card-body">
+                                <p class="text-secondary mb-3">Reset all settings to their default values.</p>
+                                <button id="resetButton" class="btn btn-danger w-100">
+                                    <i class="bi bi-trash me-2"></i>Reset to Defaults
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -113,6 +329,12 @@
     <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
         <div id="alertContainer"></div>
     </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>Trading Bot Configuration Interface &copy; 2023</p>
+        </div>
+    </footer>
 
     <script>
         // Function to show alerts
@@ -133,6 +355,14 @@
             }, 5000);
         }
 
+        // Update summary display
+        function updateSummary(config) {
+            document.getElementById('summaryPositionSize').textContent = `$${config.position_size.min_amount} - $${config.position_size.max_amount}`;
+            document.getElementById('summaryStopLoss').textContent = `${config.stop_loss.percentage}%`;
+            document.getElementById('summaryTakeProfit').textContent = `${config.take_profit.percentage}%`;
+            document.getElementById('summaryEntryAdjustment').textContent = `${((config.entry_price_adjustment - 1) * 100).toFixed(1)}%`;
+        }
+
         // Load current configuration
         async function loadConfig() {
             try {
@@ -144,6 +374,8 @@
                 document.getElementById('stopLoss').value = config.stop_loss.percentage;
                 document.getElementById('takeProfit').value = config.take_profit.percentage;
                 document.getElementById('entryAdjustment').value = (config.entry_price_adjustment - 1) * 100;
+                
+                updateSummary(config);
             } catch (error) {
                 showAlert('Failed to load configuration', 'danger');
             }
@@ -171,6 +403,7 @@
                 
                 if (response.ok) {
                     showAlert('Position size updated successfully');
+                    loadConfig(); // Reload config to update summary
                 } else {
                     showAlert('Failed to update position size', 'danger');
                 }
@@ -205,6 +438,7 @@
                     
                     if (response2.ok) {
                         showAlert('Stop loss and take profit updated successfully');
+                        loadConfig(); // Reload config to update summary
                     } else {
                         showAlert('Failed to update take profit', 'danger');
                     }
@@ -232,6 +466,7 @@
                 
                 if (response.ok) {
                     showAlert('Entry adjustment updated successfully');
+                    loadConfig(); // Reload config to update summary
                 } else {
                     showAlert('Failed to update entry adjustment', 'danger');
                 }
@@ -268,4 +503,3 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-    

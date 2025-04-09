@@ -1,7 +1,7 @@
 {
     "position_size": {
-        "min_amount": 100,
-        "max_amount": 120
+        "min_amount": 100.0,
+        "max_amount": 120.0
     },
     "stop_loss": {
         "percentage": 20
