@@ -2,10 +2,12 @@
 import asyncio
 import discord
 from discord.ext import commands
-import re
+import openai
+from openai import OpenAI
 import requests
 import json
 import os
+
 
 #keep this stuff in a .env file do not hardcode lol
 USER_TOKEN = "NjcyODM3MjIwOTUxOTE2NTQ1.Gny3oR.KMtODQXfiDWm7IY0WXa2BUrqdGKQh9yeNzC_oY"
@@ -17,6 +19,7 @@ TARGET_SERVER_ID = Personal_Server_ID
 TARGET_CHANNEL_ID = Personal_Channel_ID
 TRADIER_TOKEN = "cEZBR2y14lCRz4FvT6gsHZqWPY6c"
 TRADIER_ACCOUNT_ID = "VA81758002"
+
 
 # Configuration file path
 CONFIG_FILE = "trading_config.json"
@@ -66,59 +69,78 @@ bot = commands.Bot(command_prefix="!", self_bot=True)
 def extract_option_data(message_content):
     if "%" in message_content:
         return None
-  
-    # Regex to extract: Ticker, Strike, Option Type, Expiration (month/day), and Price
-    pattern = r'\$([A-Z]+)\s+(\d+)\s+(Puts|Calls)\s+(\d{1,2}/\d{1,2})\s+\$(\d+\.\d{2})'
-    match = re.search(pattern, message_content)
     
-    if match:
-        option_class = "option"             #hardcoded
-        symbol = match.group(1)             # e.g., SPY
-        strike_str = match.group(2)         # e.g., "593"
-        option_type_text = match.group(3)     # e.g., "Puts" or "Calls"
-        expiration_text = match.group(4)      # e.g., "3/3"
-        price = match.group(5)              # e.g., "0.68"
-        side = "buy_to_open"              # hardcoded for now
-
+    # Configure OpenAI
+    api_key = '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'
+    if not api_key:
+        print("Error: API key not set")
+        return None
+    
+    client = OpenAI(api_key=api_key)
+    
+    # Create a system prompt that explains what we want to extract
+    system_prompt = """
+    Extract option trading information from the message. Return a JSON with these fields:
+    - symbol: The stock ticker symbol (e.g., "SPY")
+    - strike: The strike price as a string (e.g., "400")
+    - option_type: "Puts" or "Calls"
+    - expiration: The expiration date in MM/DD format (e.g., "3/15")
+    - price: The option price as a string with 2 decimal places (e.g., "1.25")
+    
+    If the message doesn't contain valid option information, return null.
+    The message format should be similar to: "$SPY 400 Calls 3/15 $1.25"
+    """
+    
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini-2024-07-18",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": message_content}
+            ],
+            temperature=0,  # Keep it deterministic
+            response_format={ "type": "json_object" }
+        )
+        
+        # Parse the response
+        extracted_data = json.loads(response.choices[0].message.content)
+        
+        if not extracted_data:
+            return None
+            
+        # Process the extracted data similar to the original code
         try:
-            day, month = expiration_text.split("/")
+            day, month = extracted_data['expiration'].split("/")
             month = month.zfill(2)  # ensure two digits
             day = day.zfill(2)
             expiration_occ = "25" + month + day
-        except Exception as e:
-            print(f"Error processing expiration date: {e}")
-            expiration_occ = ""
-
-        if option_type_text.lower().startswith("put"):
-            option_type_letter = "P"
-        elif option_type_text.lower().startswith("call"):
-            option_type_letter = "C"
-        else:
-            option_type_letter = ""
-        
-        try:
-            strike_value = float(strike_str)
+            
+            option_type_letter = "P" if extracted_data['option_type'].lower().startswith("put") else "C"
+            
+            strike_value = float(extracted_data['strike'])
             strike_occ_int = int(round(strike_value * 1000))
             strike_occ = f"{strike_occ_int:08d}"  # zero-padded to 8 digits
+            
+            option_symbol = f"{extracted_data['symbol']}{expiration_occ}{option_type_letter}{strike_occ}"
+            
+            return {
+                "option_class": "option",
+                "symbol": extracted_data['symbol'],
+                "strike": extracted_data['strike'],
+                "option_type": extracted_data['option_type'],
+                "expiration": extracted_data['expiration'],
+                "price": extracted_data['price'],
+                "side": "buy_to_open",
+                "option_symbol": option_symbol
+            }
+            
         except Exception as e:
-            print(f"Error processing strike price: {e}")
-            strike_occ = ""
-        
-        option_symbol = f"{symbol}{expiration_occ}{option_type_letter}{strike_occ}"
-    
-        return {
-            "option_class": option_class,
-            "symbol": symbol,
-            "strike": strike_str,
-            "option_type": option_type_text,
-            "expiration": expiration_text,
-            "price": price,
-            "side": side,
-            "option_symbol": option_symbol
-        }
-    else:
+            print(f"Error processing extracted data: {e}")
+            return None
+            
+    except Exception as e:
+        print(f"Error calling OpenAI API: {e}")
         return None
-    
 
 #Sends orders to tradier
 async def send_tradier_order(payload):
