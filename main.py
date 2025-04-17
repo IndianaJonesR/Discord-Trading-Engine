@@ -13,8 +13,8 @@ Morphine_Server_ID = 1053388723737337967
 Morphine_Channel_ID = 1060658654350688447
 Personal_Server_ID = 990575817115463770
 Personal_Channel_ID = 990575817115463773
-TARGET_SERVER_ID = Personal_Server_ID
-TARGET_CHANNEL_ID = Personal_Channel_ID
+TARGET_SERVER_ID = Morphine_Server_ID
+TARGET_CHANNEL_ID = Morphine_Channel_ID
 TRADIER_TOKEN = "cEZBR2y14lCRz4FvT6gsHZqWPY6c"
 TRADIER_ACCOUNT_ID = "VA81758002"
 
@@ -120,9 +120,40 @@ def extract_option_data(message_content):
         return None
     
 
-#Sends orders to tradier
+async def check_order_status(order_id):
+    url = f"https://api.tradier.com/v1/accounts/{TRADIER_ACCOUNT_ID}/orders/{order_id}"
+    headers = {
+        'Authorization': f"Bearer {TRADIER_TOKEN}",
+        'Accept': 'application/json'
+    }
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            json_response = response.json()
+            if 'order' in json_response:
+                return json_response['order']['status']
+        return None
+    except Exception as e:
+        print(f"Error checking order status: {e}")
+        return None
+
+async def cancel_order(order_id):
+    url = f"https://api.tradier.com/v1/accounts/{TRADIER_ACCOUNT_ID}/orders/{order_id}"
+    headers = {
+        'Authorization': f"Bearer {TRADIER_TOKEN}",
+        'Accept': 'application/json'
+    }
+    try:
+        response = requests.delete(url, headers=headers)
+        if response.status_code == 200:
+            return True
+        return False
+    except Exception as e:
+        print(f"Error canceling order: {e}")
+        return False
+
 async def send_tradier_order(payload):
-    url = f"https://sandbox.tradier.com/v1/accounts/{TRADIER_ACCOUNT_ID}/orders"
+    url = f"https://api.tradier.com/v1/accounts/{TRADIER_ACCOUNT_ID}/orders"
     headers = {
         'Authorization': f"Bearer {TRADIER_TOKEN}",
         'Accept': 'application/json'
@@ -133,21 +164,48 @@ async def send_tradier_order(payload):
         print(f"Response Text: {response.text}")
         if response.status_code == 200:
             try: 
-                
                 json_response = response.json()
                 print(f"JSON Response: {json_response}")
-                return response.status_code, json_response  # Return status and parsed response
+                
+                # Get the order ID from the response
+                if 'order' in json_response and 'id' in json_response['order']:
+                    order_id = json_response['order']['id']
+                    
+                    # Wait for 30 seconds
+                    await asyncio.sleep(30)
+                    
+                    # Check order status
+                    status = await check_order_status(order_id)
+                    if status:
+                        if status.lower() == 'filled':
+                            print("OTOCO order filled successfully!")
+                            return response.status_code, json_response
+                        elif status.lower() == 'cancelled':
+                            print("Order was cancelled")
+                            return response.status_code, json_response
+                        else:
+                            # Cancel the order if not filled
+                            print(f"Order {order_id} not filled after 30 seconds, attempting to cancel...")
+                            if await cancel_order(order_id):
+                                print("Order cancelled successfully")
+                                return response.status_code, json_response
+                            else:
+                                print("Failed to cancel order")
+                                return response.status_code, json_response
+                    else:
+                        print("Could not determine order status")
+                        return response.status_code, json_response
+                
+                return response.status_code, json_response
             except ValueError:
-                    print("Response is not valid JSON")
-                    return response.status_code, None  # Return status with no parsed response
+                print("Response is not valid JSON")
+                return response.status_code, None
         else:
             print(f"API request failed with status {response.status_code}")
             return response.status_code, None
     except Exception as e:
         print(f"Error sending Tradier API request: {e}")
         return None, None
-
-
 
 @bot.event
 async def on_ready():
@@ -161,9 +219,7 @@ async def on_message(message):
         if message.guild.id == TARGET_SERVER_ID and message.channel.id == TARGET_CHANNEL_ID:
             option_data = extract_option_data(message.content)
             if option_data:
-                #print("Waiting 15 minutes due to delayed market data...")
-                #await asyncio.sleep(15 * 60)  # 15 minutes = 900 seconds
-
+                
                 try:
                     # Load current configuration
                     config = load_config()
@@ -235,6 +291,9 @@ async def on_message(message):
                 print("Sending OTOCO Order:")
                 for key, value in otoco_payload.items():
                     print(f"{key}: {value}")
+                
+
+
                 
                 status, response_json = await send_tradier_order(otoco_payload)
                 if status == 200:
