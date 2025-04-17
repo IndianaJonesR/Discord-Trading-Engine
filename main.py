@@ -15,8 +15,8 @@ Personal_Server_ID = 990575817115463770
 Personal_Channel_ID = 990575817115463773
 TARGET_SERVER_ID = Morphine_Server_ID
 TARGET_CHANNEL_ID = Morphine_Channel_ID
-TRADIER_TOKEN = "cEZBR2y14lCRz4FvT6gsHZqWPY6c"
-TRADIER_ACCOUNT_ID = "VA81758002"
+TRADIER_TOKEN = "maMInpKLw7eC3ZweCokENRW3m4R5"
+TRADIER_ACCOUNT_ID = "6YB53324"
 
 # Configuration file path
 CONFIG_FILE = "trading_config.json"
@@ -225,7 +225,7 @@ async def on_message(message):
                     config = load_config()
                     
                     # Calculate entry price with user-defined adjustment
-                    entry_price = float(option_data['price']) * config['entry_price_adjustment']
+                    entry_price = round(float(option_data['price']) * config['entry_price_adjustment'], 2)
                     
                     # Calculate stop loss and take profit based on user preferences
                     stop_loss_percentage = config['stop_loss']['percentage'] / 100
@@ -269,7 +269,7 @@ async def on_message(message):
                     'duration': 'day',
                     # Primary buy order
                     'type[0]': 'limit',
-                    'price[0]': option_data['price'],
+                    'price[0]': entry_price,
                     'option_symbol[0]': option_data['option_symbol'],
                     'side[0]': 'buy_to_open',
                     'quantity[0]': str(pos_size) ,
