@@ -93,7 +93,7 @@ def extract_option_data(message_content):
     
     try:
         response = client.chat.completions.create(
-            model="gpt-4o-mini-2024-07-18",
+            model="gpt-4.1-nano-2025-04-14",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": message_content}
