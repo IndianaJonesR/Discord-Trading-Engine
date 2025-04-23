@@ -131,13 +131,24 @@ async def check_order_status(order_id):
         if response.status_code == 200:
             json_response = response.json()
             if 'order' in json_response:
-                return json_response['order']['status']
+                order = json_response['order']
+                # For OTOCO orders, check the first leg's status
+                if order.get('class') == 'otoco' and 'leg' in order:
+                    # First leg is always the primary order
+                    return order['leg'][0].get('status')
+                return order.get('status')
         return None
     except Exception as e:
         print(f"Error checking order status: {e}")
         return None
 
 async def cancel_order(order_id):
+    # First check if the primary leg is filled
+    status = await check_order_status(order_id)
+    if status and status.lower() == 'filled':
+        print("Primary leg is already filled, skipping cancellation to preserve protective orders")
+        return False
+        
     url = f"https://api.tradier.com/v1/accounts/{TRADIER_ACCOUNT_ID}/orders/{order_id}"
     headers = {
         'Authorization': f"Bearer {TRADIER_TOKEN}",
@@ -174,24 +185,23 @@ async def send_tradier_order(payload):
                     # Wait for 30 seconds
                     await asyncio.sleep(30)
                     
-                    # Check order status
+                    # Check primary leg status
                     status = await check_order_status(order_id)
                     if status:
                         if status.lower() == 'filled':
-                            print("OTOCO order filled successfully!")
+                            print("Primary leg filled successfully! Protective orders (take profit and stop loss) are active.")
                             return response.status_code, json_response
                         elif status.lower() == 'cancelled':
                             print("Order was cancelled")
                             return response.status_code, json_response
                         else:
-                            # Cancel the order if not filled
-                            print(f"Order {order_id} not filled after 30 seconds, attempting to cancel...")
+                            # Cancel the order if primary leg is not filled
+                            print(f"Primary leg not filled after 30 seconds, attempting to cancel...")
                             if await cancel_order(order_id):
                                 print("Order cancelled successfully")
-                                return response.status_code, json_response
                             else:
-                                print("Failed to cancel order")
-                                return response.status_code, json_response
+                                print("Failed to cancel order or primary leg was already filled")
+                            return response.status_code, json_response
                     else:
                         print("Could not determine order status")
                         return response.status_code, json_response
