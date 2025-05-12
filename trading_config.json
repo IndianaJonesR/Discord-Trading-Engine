@@ -1,13 +1,13 @@
 {
     "position_size": {
-        "min_amount": 80.0,
-        "max_amount": 100.0
+        "min_amount": 60.0,
+        "max_amount": 75.0
     },
     "stop_loss": {
-        "percentage": 25.0
+        "percentage": 30.0
     },
     "take_profit": {
-        "percentage": 30.0
+        "percentage": 40.0
     },
     "entry_price_adjustment": 1.02
 }
