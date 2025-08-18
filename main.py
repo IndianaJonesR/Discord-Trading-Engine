@@ -8,7 +8,7 @@ import json
 import os
 
 #keep this stuff in a .env file do not hardcode lol
-USER_TOKEN = "NjcyODM3MjIwOTUxOTE2NTQ1.Gny3oR.KMtODQXfiDWm7IY0WXa2BUrqdGKQh9yeNzC_oY"
+USER_TOKEN = "Njg4NDM3MTYyNDI0OTI2MjQx.Ge2TNP.5iirn_USBEbY8vJbIf0e7yZ2w2ft14FZq5KPjU"
 Morphine_Server_ID = 1053388723737337967
 Morphine_Channel_ID = 1060658654350688447
 Personal_Server_ID = 990575817115463770
