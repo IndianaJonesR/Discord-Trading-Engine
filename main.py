@@ -71,7 +71,7 @@ def extract_option_data(message_content):
         return None
     
     # Configure OpenAI
-    api_key = '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'
+    api_key = ''
     if not api_key:
         print("Error: API key not set")
         return None
