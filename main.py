@@ -8,15 +8,15 @@ import json
 import os
 
 #keep this stuff in a .env file do not hardcode lol
-USER_TOKEN = "Njg4NDM3MTYyNDI0OTI2MjQx.Ge2TNP.5iirn_USBEbY8vJbIf0e7yZ2w2ft14FZq5KPjU"
-Morphine_Server_ID = 1053388723737337967
-Morphine_Channel_ID = 1060658654350688447
-Personal_Server_ID = 990575817115463770
-Personal_Channel_ID = 990575817115463773
+USER_TOKEN = "USERTOKEN"
+Morphine_Server_ID = EXAMPLE SERVER
+Morphine_Channel_ID = EXAMPLE CHANNEL
+Personal_Server_ID = EXAMPLE PERSONAL SERVER
+Personal_Channel_ID = EXAMPLE PERSONAL CHANNEL
 TARGET_SERVER_ID = Morphine_Server_ID
 TARGET_CHANNEL_ID = Morphine_Channel_ID
-TRADIER_TOKEN = "maMInpKLw7eC3ZweCokENRW3m4R5"
-TRADIER_ACCOUNT_ID = "6YB53324"
+TRADIER_TOKEN = "EXAMPLE TOKEN"
+TRADIER_ACCOUNT_ID = "EXAMPLE ID"
 
 # Configuration file path
 CONFIG_FILE = "trading_config.json"
