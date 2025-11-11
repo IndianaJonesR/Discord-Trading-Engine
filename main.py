@@ -10,15 +10,15 @@ import os
 
 
 #keep this stuff in a .env file do not hardcode lol
-USER_TOKEN = "NjcyODM3MjIwOTUxOTE2NTQ1.Gny3oR.KMtODQXfiDWm7IY0WXa2BUrqdGKQh9yeNzC_oY"
-Morphine_Server_ID = 1053388723737337967
-Morphine_Channel_ID = 1060658654350688447
-Personal_Server_ID = 990575817115463770
-Personal_Channel_ID = 990575817115463773
+USER_TOKEN = ""
+Morphine_Server_ID = 
+Morphine_Channel_ID = 
+Personal_Server_ID = 
+Personal_Channel_ID = 
 TARGET_SERVER_ID = Personal_Server_ID
 TARGET_CHANNEL_ID = Personal_Channel_ID
-TRADIER_TOKEN = "cEZBR2y14lCRz4FvT6gsHZqWPY6c"
-TRADIER_ACCOUNT_ID = "VA81758002"
+TRADIER_TOKEN = ""
+TRADIER_ACCOUNT_ID = ""
 
 
 # Configuration file path
